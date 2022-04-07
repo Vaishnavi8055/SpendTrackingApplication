@@ -57,30 +57,10 @@ public class SwaggerConfig {
                 "Some custom description of API.",
                 "1.0",
                 "Terms of service",
-                new Contact("Vaishnavi", "www.baeldung.com", "salloszraj@gmail.com"),
+                new Contact("Vaishnavi", "https://www.linkedin.com/in/vaishnavi-chaurasia-2aa5071a3/", "vaishnavichaurasia89@gmail.com"),
                 "License of API",
                 "API license URL",
                 Collections.emptyList());
     }
 
-
-  /*  @Bean
-    public Docket swaggerConfiguration() {
-        return new Docket(DocumentationType.SWAGGER_2).select().paths(PathSelectors.ant("/**"))
-                .apis(RequestHandlerSelectors.basePackage("com.incs")).build().apiInfo(apiDetails());
-    }
-
-    private ApiInfo apiDetails() {
-        return new ApiInfo(
-                "Spend Tracking Application",
-                "Sample Project",
-                "1.0",
-                "Free To use",
-                new springfox.documentation.service.Contact("Vaishnavi Chaurasia", "ww.google.com", "vaishnavi89@gmail.com"),
-                "API License",
-                "http://ince.io",
-                Collections.emptyList()
-        );
-    }
-*/
 }
