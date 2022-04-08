@@ -135,6 +135,7 @@ public class AdminProductController {
             @ApiResponse(code = 403, message = "Not Authorized on this resource", response = AccessDeniedResponseDTO.class),
             @ApiResponse(code = 404, message = "The resource you were trying to reach is not found"),
     })
+    // max 5
     @GetMapping("/getByCategoryId/{productCategoryId}")
     public ResponseDTO<?> getProductByProductCategoryId(@PathVariable String productCategoryId) {
         return responseUtil.ok(productService.getProductByProductCategoryId(productCategoryId), ApiResponseCode.SUCCESS);

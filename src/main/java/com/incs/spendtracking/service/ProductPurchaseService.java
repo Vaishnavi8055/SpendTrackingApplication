@@ -32,6 +32,21 @@ public class ProductPurchaseService {
     @Autowired
     private PurchaseHistoryRepository purchaseHistoryRepository;
 
+    @Autowired
+    private UserHistoryRepository userHistoryRepository;
+
+
+    public void userHistoryActivity(String userId, String userName, String description) {
+        UserHistory userHistory = new UserHistory();
+        userHistory.setUserHistoryId(CommonUtils.generateUUID());
+        userHistory.setUserId(userId);
+        userHistory.setDescription(description);
+        userHistory.setActivityDoneAt(LocalDateTime.now());
+        userHistory.setDescription(description);
+        userHistory.setUserName(userName);
+
+        userHistoryRepository.save(userHistory);
+    }
 
     public ProductPurchase madePurchase(ProductPurchaseRequest productPurchaseRequest, String userId, String productId) {
 
@@ -93,8 +108,10 @@ public class ProductPurchaseService {
             productPurchase.setPurchaseId(CommonUtils.generateUUID());
             productPurchase.setPurchaseAddress(productPurchaseRequest.getAddress());
 
-        }
+            userHistoryActivity(user.getUserId(), user.getUserName(), "Product Purchased");
 
+
+        }
 
         productRepository.save(productToBuy);
         productPurchaseRepository.save(productPurchase);

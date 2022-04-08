@@ -16,8 +16,10 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("/api/user")
@@ -28,19 +30,6 @@ public class UserController {
 
     @Autowired
     private UserService userService;
-
-
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
-    @GetMapping("/admin")
-    String gethello() {
-        return "Hello Admin";
-    }
-
-    @PreAuthorize("hasRole('ROLE_USER')")
-    @GetMapping("/user")
-    String getUser() {
-        return "Hello User";
-    }
 
 
     @ApiOperation(value = "Register End User")
@@ -71,6 +60,19 @@ public class UserController {
         // System.out.println("Controller called");
 
         return userService.generateToken(loginRequest);
+    }
+
+    @ApiOperation(value = "Logout End User")
+    @ApiResponses(value = {
+            @ApiResponse(code = 201, message = "Created", response = ApiResponseDTO.class),
+            @ApiResponse(code = 400, message = "Bad Request", response = BadRequestResponseDTO.class),
+            @ApiResponse(code = 401, message = "You are Not Authenticated", response = NotAuthenticatedResponseDTO.class),
+            @ApiResponse(code = 403, message = "Not Authorized on this resource", response = AccessDeniedResponseDTO.class),
+            @ApiResponse(code = 404, message = "The resource you were trying to reach is not found"),
+    })
+    @GetMapping("/logout")
+    public String logout(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws Exception {
+        return userService.logout(httpServletRequest, httpServletResponse);
     }
 
     @ApiOperation(value = "Update profile of User")

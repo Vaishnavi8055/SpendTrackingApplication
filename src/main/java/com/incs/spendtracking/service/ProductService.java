@@ -53,9 +53,6 @@ public class ProductService {
         if (Objects.isNull(product.getProductCategory())) {
             throw new ValidationException(HttpStatus.BAD_REQUEST.value(), "Product Category cannot be null or empty");
         }
-
-        //////////  product.setProductPurchaseSet();
-
         productRepository.save(product);
 
         return product;
@@ -115,9 +112,7 @@ public class ProductService {
     }
 
     public Set<Product> getProductByProductCategoryId(String productCategoryId) {
-
-        Set<Product> productSet = productCategoryRepository.findTop2ByProductCategoryIdOrderByProductPriceAsc(productCategoryId);
+        Set<Product> productSet = productRepository.findTop2ByProductCategoryIdOrderByProductPriceAsc(productCategoryId);
         return productSet;
     }
-
 }

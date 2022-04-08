@@ -2,12 +2,10 @@ package com.incs.spendtracking.service;
 
 import com.incs.spendtracking.CustomUserDetailService;
 import com.incs.spendtracking.common.User;
+import com.incs.spendtracking.common.UserHistory;
 import com.incs.spendtracking.common.UserWallet;
 import com.incs.spendtracking.exception.ValidationException;
-import com.incs.spendtracking.repository.LoginDao;
-import com.incs.spendtracking.repository.UserRepository;
-import com.incs.spendtracking.repository.UserWalletRepository;
-import com.incs.spendtracking.repository.WalletRepository;
+import com.incs.spendtracking.repository.*;
 import com.incs.spendtracking.request.AuthenticationRequest;
 import com.incs.spendtracking.request.UserRequest;
 import com.incs.spendtracking.request.UserUpdateRequest;
@@ -18,10 +16,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Service
@@ -48,21 +51,31 @@ public class UserService {
     @Autowired
     private CustomUserDetailService customUserDetailService;
 
-  /*  @Autowired
-    private RoleRepository roleRepository;*/
-
     @Autowired
     private WalletRepository walletRepository;
 
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
-    /*@Autowired
-    private CustomUserDetailService customUserDetailService;
-*/
+    @Autowired
+    private UserHistoryRepository userHistoryRepository;
+
+    public void userHistoryActivity(String userId, String userName, String description) {
+        UserHistory userHistory = new UserHistory();
+        userHistory.setUserHistoryId(CommonUtils.generateUUID());
+        userHistory.setUserId(userId);
+        userHistory.setDescription(description);
+        userHistory.setActivityDoneAt(LocalDateTime.now());
+        userHistory.setDescription(description);
+        userHistory.setUserName(userName);
+
+        userHistoryRepository.save(userHistory);
+    }
+
     public User register(UserRequest endUserRequest) {
 
         User endUser = new User();
+
         endUser.setUserId(CommonUtils.generateUUID());
         endUser.setFirstName(endUserRequest.getFirstName());
 
@@ -98,12 +111,6 @@ public class UserService {
         if (Objects.isNull(endUser.getPassword()) || endUser.getPassword() == "") {
             throw new ValidationException(HttpStatus.BAD_REQUEST.value(), "User Password cannot be null or empty");
         }
-        // endUser.setUserRole(endUserRepository.getUserRoleName(endUserRequest.getRoleName()));
-
-       /* if (endUserRepository.getCountOfUsersInDatabase() < 0){
-            throw  new ValidationException(HttpStatus.BAD_REQUEST.value(), "No Users Registered");
-        }*/
-
         if (endUserRepository.getCountOfUsersInDatabase() <= 0) {
             endUser.setUserRoleName("ADMIN");
         } else {
@@ -112,32 +119,23 @@ public class UserService {
 
         endUser.setEnabled("ACTIVE");
 
-        if (endUser.getUserRoleName().equals("USER")) {
-            UserWallet userWallet = new UserWallet();
-            userWallet.setUserWalletId(CommonUtils.generateUUID());
-            userWallet.setUserWalletType(endUserRequest.getUserWalletType());
-            userWallet.setUserWalletCredit(walletRepository.getWalletCredit(endUserRequest.getUserWalletType()));
-            userWallet.setWallet(walletRepository.getWallet(endUserRequest.getUserWalletType()));
-            userWallet.setUser(endUser);
-            userWalletRepository.save(userWallet);
-        } else {
-            UserWallet adminUserWallet = new UserWallet();
-            adminUserWallet.setUserWalletId(CommonUtils.generateUUID());
-            adminUserWallet.setUserWalletType("PREMIUM");
-            adminUserWallet.setUserWalletCredit(60000);
-            adminUserWallet.setWallet(walletRepository.getWallet(endUserRequest.getUserWalletType()));
-            adminUserWallet.setUser(endUser);
-            userWalletRepository.save(adminUserWallet);
-        }
+        UserWallet userWallet = new UserWallet();
+        userWallet.setUserWalletId(CommonUtils.generateUUID());
+        userWallet.setUserWalletType(endUserRequest.getUserWalletType());
+        userWallet.setUserWalletCredit(walletRepository.getWalletCredit(endUserRequest.getUserWalletType()));
+        userWallet.setWallet(walletRepository.getWallet(endUserRequest.getUserWalletType()));
+        userWallet.setUser(endUser);
+        userWalletRepository.save(userWallet);
 
 
+        userHistoryActivity(endUser.getUserId(), endUser.getUserName(), "User registered");
         // save
         endUserRepository.save(endUser);
 
         return endUser;
     }
 
-    public String generateToken(@RequestBody AuthenticationRequest authenticationRequest) throws Exception {
+    public String generateToken(AuthenticationRequest authenticationRequest) throws Exception {
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(authenticationRequest.getUserName(), authenticationRequest.getPassword())
@@ -147,7 +145,23 @@ public class UserService {
         }
 
         User userData = endUserRepository.findByUserName(authenticationRequest.getUserName());
-        return jwtUtil.generateToken(authenticationRequest.getUserName(), userData);
+
+        userHistoryActivity(userData.getUserId(), userData.getUserName(), "Token Generated");
+
+        if (userData.getEnabled().equals("Disabled")) {
+            throw new ValidationException(HttpStatus.BAD_REQUEST.value(), "You are disabled by admin, Kindly Contact Admin!!");
+        } else
+            return jwtUtil.generateToken(authenticationRequest.getUserName(), userData);
+    }
+
+    public String logout(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null) {
+            new SecurityContextLogoutHandler().logout(httpServletRequest, httpServletResponse, authentication);
+        }
+
+        return "Logout Successfully";
     }
 
     public User updateUserProfile(UserUpdateRequest userUpdateRequest, String userName) {
@@ -194,6 +208,8 @@ public class UserService {
         if (Objects.isNull(existingUser.getPhoneNumber()) || existingUser.getPhoneNumber() == "") {
             throw new ValidationException(HttpStatus.BAD_REQUEST.value(), "User Phone Number cannot be null or empty");
         }
+
+        userHistoryActivity(existingUser.getUserId(), existingUser.getUserName(), "User Profile Updated");
 
         return endUserRepository.save(existingUser);
     }

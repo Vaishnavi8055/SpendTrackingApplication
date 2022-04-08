@@ -1,9 +1,9 @@
 package com.incs.spendtracking.common;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.format.annotation.DateTimeFormat;
 
-import javax.persistence.*;
+import javax.persistence.Id;
 import java.time.LocalDateTime;
 
 @Document(collection = "purchase_history")
@@ -14,6 +14,7 @@ public class ProductPurchaseHistory {
     private String productName;
     private Integer productQuantity;
     private Integer productPurchasedPrice;
+    @DateTimeFormat(pattern = "dd/MM/yyyy | hh:mm")
     private LocalDateTime productBuyAt;
 
     public String getPurchaseHistoryId() {

@@ -23,9 +23,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.firewall.HttpStatusRequestRejectedHandler;
 import org.springframework.security.web.firewall.RequestRejectedHandler;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled = true , securedEnabled = true)
+@EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
 @Configuration
 public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
@@ -40,6 +41,7 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     private static final String[] AUTH_WHITELIST = {
             "/api/user/token",
+            "/api/user/logout",
             "/api/admin/addWallet",
             "/api/user/register",
             // -- Swagger UI v2
@@ -76,7 +78,11 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .anyRequest().authenticated()
                 .and().sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+
+                .logout().logoutRequestMatcher(new AntPathRequestMatcher("/api/logout"));
+
+
     }
 
 
@@ -91,5 +97,6 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
     }
 
     //---------------------------------------------------------/
+
 
 }

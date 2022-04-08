@@ -30,7 +30,7 @@ public class ProductCategoryController {
     private ResponseUtil responseUtil;
 
 
-    @ApiOperation(value = "Insert Product")
+    @ApiOperation(value = "Insert Product Category")
     @ApiResponses(value = {
             @ApiResponse(code = 201, message = "Created", response = ApiResponseDTO.class),
             @ApiResponse(code = 400, message = "Bad Request", response = BadRequestResponseDTO.class),
@@ -41,7 +41,6 @@ public class ProductCategoryController {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping("/add")
     public ResponseDTO<?> addProductCategory(@RequestBody ProductCategoryRequest productCategoryRequest) {
-        System.out.println("Controller called");
         productCategoryService.addProductCategory(productCategoryRequest);
         return responseUtil.ok(ApiResponseCode.SUCCESS);
     }
